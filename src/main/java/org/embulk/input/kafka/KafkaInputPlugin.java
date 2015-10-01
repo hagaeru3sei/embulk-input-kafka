@@ -125,11 +125,9 @@ public class KafkaInputPlugin implements InputPlugin
     }
 
     @Override
-    public CommitReport run(
-        TaskSource taskSource,
-        Schema schema,
-        int taskIndex,
-        PageOutput output)
+    public TaskReport run(TaskSource taskSource,
+                          Schema schema, int taskIndex,
+                          PageOutput output)
     {
         PluginTask task = taskSource.loadTask(PluginTask.class);
 
@@ -179,7 +177,7 @@ public class KafkaInputPlugin implements InputPlugin
             logger.info("exec count: " + counter);
         }
 
-        return Exec.newCommitReport();
+        return Exec.newTaskReport();
     }
 
     @Override
