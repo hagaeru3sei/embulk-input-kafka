@@ -89,6 +89,10 @@ public class KafkaInputPlugin implements InputPlugin
         @Config("auto.offset.reset")
         String getAutoOffsetReset();
 
+        @Config("ignore.lines")
+        @ConfigDefault("0")
+        String getIgnoreLines();
+
         @Config("data.format")
         String getDataFormat();
     }
@@ -228,7 +232,13 @@ public class KafkaInputPlugin implements InputPlugin
         int idx = 0;
         for (String th : header) {
             Map<String, String> column = new HashMap<String, String>();
-            column.put("name", th);
+            String name;
+            if (task.getIgnoreLines().equals("0")) {
+                name = "c" + String.valueOf(idx);
+            } else {
+                name = th;
+            }
+            column.put("name", name);
             column.put("type", "");
             columns.add(idx, column);
             idx++;
