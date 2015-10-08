@@ -8,6 +8,7 @@ import org.embulk.config.*;
 import org.embulk.exec.NoSampleException;
 import org.embulk.input.kafka.client.consumer.ConsumerWorker;
 import org.embulk.input.kafka.client.consumer.DataSampler;
+import org.embulk.input.kafka.exception.DataTypeNotFoundException;
 import org.embulk.spi.*;
 import org.slf4j.Logger;
 
@@ -139,22 +140,25 @@ public class KafkaInputPlugin implements InputPlugin
         ConsumerConnector consumer = Consumer.createJavaConsumerConnector(config);
         List<KafkaStream<byte[], byte[]>> streams = getStreams(task, consumer);
 
-        // TODO: thread pool count from config
-        ExecutorService executor = Executors.newFixedThreadPool(4);
+        ExecutorService executor = Executors.newSingleThreadExecutor();
 
         AtomicInteger counter = new AtomicInteger(0);
 
         int threadNumber = 0;
         for (KafkaStream stream : streams) {
-            executor.submit(
-                new ConsumerWorker(
-                    stream,
-                    threadNumber,
-                    columns,
-                    counter,
-                    pageBuilder,
-                    task.getDataFormat(),
-                    Integer.valueOf(task.getIgnoreLines())));
+            try {
+                executor.submit(
+                    new ConsumerWorker(
+                        stream,
+                        threadNumber,
+                        columns,
+                        counter,
+                        pageBuilder,
+                        task.getDataFormat(),
+                        Integer.valueOf(task.getIgnoreLines())));
+            } catch (DataTypeNotFoundException e) {
+                logger.error(e.getMessage());
+            }
             threadNumber++;
         }
 

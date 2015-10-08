@@ -22,7 +22,7 @@ public class ConsumerWorker implements Runnable
     private volatile AtomicInteger counter;
     private final Logger logger = Exec.getLogger(ConsumerWorker.class);
     private final PageBuilder pageBuilder;
-    private final String format;
+    private final DataType format;
     private final int ignoreLines;
 
     public ConsumerWorker(
@@ -32,14 +32,14 @@ public class ConsumerWorker implements Runnable
         AtomicInteger counter,
         PageBuilder pageBuilder,
         String format,
-        int ignoreLines)
-    {
+        int ignoreLines) throws DataTypeNotFoundException {
+
         this.threadNumber = threadNumber;
         this.stream = stream;
         this.columns = columns;
         this.counter = counter;
         this.pageBuilder = pageBuilder;
-        this.format = format;
+        this.format = DataType.get(format);
         this.ignoreLines = ignoreLines;
     }
 
@@ -87,7 +87,7 @@ public class ConsumerWorker implements Runnable
     private Record getRecord(byte[] message) throws DataTypeNotFoundException
     {
         Record record = null;
-        switch (DataType.get(format))
+        switch (format)
         {
             case Tsv: record = DataConverter.convert(message, "\t"); break;
             case Csv: record = DataConverter.convert(message, ","); break;
