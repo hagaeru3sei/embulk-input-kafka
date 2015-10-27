@@ -1,14 +1,21 @@
 in:
-    type: kafka
-    host: "localhost"
-    port: 2181
-    topic: "topic1"
-    group.id: "group1"
-    zookeeper.session.timeout.ms: "10000"
-    zookeeper.sync.time.ms: "200"
-    auto.commit.interval.ms: "1000"
-    auto.offset.reset: "smallest"
-    ignore.lines: "0"
-    data.format: "csv"
+  type: kafka
+  host: "localhost"
+  port: 2181
+  topic: "topic1"
+  group.id: "group1"
+  zookeeper.session.timeout.ms: "10000"
+  zookeeper.sync.time.ms: "200"
+  auto.commit.interval.ms: "1000"
+  auto.offset.reset: "smallest"
+  ignore.lines: "0"
+  data.format: "csv"
+  data.columns:
+    - {name: 'c1', type: string}
+    - {name: 'c2', type: long}
+    - {name: 'c3', type: boolean}
+    - {name: 'c4', type: double}
+    - {name: 'c5', format: '%Y-%m-%d %H:%M:%S', type: timestamp}
+  preview.sampling.count: 10
 out:
   type: stdout

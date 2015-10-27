@@ -1,6 +1,10 @@
 # Kafka input plugin for Embulk
 
-TODO: Write short description here and build.gradle file.
+## Supported data format
+
+- CSV
+- TSV
+- JSON
 
 ## Overview
 
@@ -17,10 +21,11 @@ TODO: Write short description here and build.gradle file.
 - **data.format**: description (string, default: `null`)
 - **data.columns**: description (string, default: `null`)
 - **ignore.lines**: description (integer, default: `0`)
+- **preview.sampling.count**: description (integer, default: `10`)
 
 ## Example
 
-Kafka data format sample
+Kafka data format sample (JSON)
 
 ```json
 {
@@ -36,14 +41,16 @@ in:
   type: kafka
   host: localhost
   port: 2181
-  topic: test
+  topic: topic1
+  group: group1
   data.format: json
   data.columns:
       - {name: "version", type: string}
       - {name: "datetime", type: string}
       - {name: "key", type: string}
       - {name: "value", type: string}
-   ignore.lines: 0
+  ignore.lines: 0
+  preview.sampling.count: 10
 out:
   type: file
   path_prefix: kafka-input
@@ -66,6 +73,10 @@ $ cp config.yml.sample config.yml
 
 ```
 $ ./gradlew gem
+```
+
+```
+$ ./gradlew package
 ```
 
 ## Run
