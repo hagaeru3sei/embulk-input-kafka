@@ -8,6 +8,7 @@ import org.embulk.config.*;
 import org.embulk.exec.NoSampleException;
 import org.embulk.input.kafka.client.consumer.ConsumerWorker;
 import org.embulk.input.kafka.client.consumer.DataSampler;
+import org.embulk.input.kafka.data.DataType;
 import org.embulk.input.kafka.exception.DataTypeNotFoundException;
 import org.embulk.spi.*;
 import org.slf4j.Logger;
@@ -140,8 +141,6 @@ public class KafkaInputPlugin implements InputPlugin
     {
         PluginTask task = taskSource.loadTask(PluginTask.class);
 
-        if (Exec.isPreview()) System.out.println("is preview: " + Exec.isPreview());
-
         SchemaConfig columns = task.getColumns();
         BufferAllocator allocator = task.getBufferAllocator();
         PageBuilder pageBuilder = new PageBuilder(allocator, schema, output);
@@ -155,6 +154,12 @@ public class KafkaInputPlugin implements InputPlugin
         AtomicInteger counter = new AtomicInteger(0);
 
         int threadNumber = 0;
+        DataType format = null;
+        try {
+            format = DataType.get(task.getDataFormat());
+        } catch (DataTypeNotFoundException e) {
+            logger.error(e.getMessage());
+        }
         for (KafkaStream stream : streams) {
             try {
                 executor.submit(
@@ -164,7 +169,7 @@ public class KafkaInputPlugin implements InputPlugin
                         columns,
                         counter,
                         pageBuilder,
-                        task.getDataFormat(),
+                        format,
                         Integer.valueOf(task.getIgnoreLines()),
                         task.getPreviewSamplingCount()));
             } catch (DataTypeNotFoundException e) {

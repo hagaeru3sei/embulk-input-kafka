@@ -32,7 +32,7 @@ public class ConsumerWorker implements Runnable
         SchemaConfig columns,
         AtomicInteger counter,
         PageBuilder pageBuilder,
-        String format,
+        DataType format,
         int ignoreLines,
         int previewSamplingCount) throws DataTypeNotFoundException {
 
@@ -41,7 +41,7 @@ public class ConsumerWorker implements Runnable
         this.columns = columns;
         this.counter = counter;
         this.pageBuilder = pageBuilder;
-        this.format = DataType.get(format);
+        this.format = format;
         this.ignoreLines = ignoreLines;
         this.previewSamplingCount = previewSamplingCount;
 
