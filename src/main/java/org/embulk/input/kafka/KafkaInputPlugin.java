@@ -65,6 +65,10 @@ public class KafkaInputPlugin implements InputPlugin
         @Config("data.columns")
         SchemaConfig getColumns();
 
+        @Config("preview.sampling.count")
+        @ConfigDefault("10")
+        int getPreviewSamplingCount();
+
         @ConfigInject
         BufferAllocator getBufferAllocator();
     }
@@ -136,6 +140,8 @@ public class KafkaInputPlugin implements InputPlugin
     {
         PluginTask task = taskSource.loadTask(PluginTask.class);
 
+        if (Exec.isPreview()) System.out.println("is preview: " + Exec.isPreview());
+
         SchemaConfig columns = task.getColumns();
         BufferAllocator allocator = task.getBufferAllocator();
         PageBuilder pageBuilder = new PageBuilder(allocator, schema, output);
@@ -159,7 +165,8 @@ public class KafkaInputPlugin implements InputPlugin
                         counter,
                         pageBuilder,
                         task.getDataFormat(),
-                        Integer.valueOf(task.getIgnoreLines())));
+                        Integer.valueOf(task.getIgnoreLines()),
+                        task.getPreviewSamplingCount()));
             } catch (DataTypeNotFoundException e) {
                 logger.error(e.getMessage());
             }
@@ -260,6 +267,7 @@ public class KafkaInputPlugin implements InputPlugin
                 idx++;
                 continue;
             } catch (NumberFormatException e) {
+                logger.debug(e.getMessage());
             }
             try {
                 Double.parseDouble(value);
@@ -267,6 +275,7 @@ public class KafkaInputPlugin implements InputPlugin
                 idx++;
                 continue;
             } catch (NumberFormatException e) {
+                logger.debug(e.getMessage());
             }
             try {
                 // TODO: guess format and Add date util class
@@ -277,6 +286,7 @@ public class KafkaInputPlugin implements InputPlugin
                 idx++;
                 continue;
             } catch (ParseException e) {
+                logger.debug(e.getMessage());
             }
 
             columns.get(idx).put("type", "string");
@@ -296,7 +306,7 @@ public class KafkaInputPlugin implements InputPlugin
     {
         Properties props = new Properties();
         props.put("zookeeper.connect", task.getHost() + DELIMITER_DOMAIN_PORT + task.getPort());
-        props.put("group.id", task.getGroupId());
+        props.put("group.id", Exec.isPreview() ? UUID.randomUUID().toString() : task.getGroupId());
         props.put("zookeeper.session.timeout.ms", task.getZookeeperSessionTimeoutMs());
         props.put("zookeeper.sync.time.ms", task.getZookeeperSyncTimeMs());
         props.put("auto.commit.interval.ms", task.getAutoCommitIntervalMs());

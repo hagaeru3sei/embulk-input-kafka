@@ -24,6 +24,7 @@ public class ConsumerWorker implements Runnable
     private final PageBuilder pageBuilder;
     private final DataType format;
     private final int ignoreLines;
+    private final int previewSamplingCount;
 
     public ConsumerWorker(
         KafkaStream stream,
@@ -32,7 +33,8 @@ public class ConsumerWorker implements Runnable
         AtomicInteger counter,
         PageBuilder pageBuilder,
         String format,
-        int ignoreLines) throws DataTypeNotFoundException {
+        int ignoreLines,
+        int previewSamplingCount) throws DataTypeNotFoundException {
 
         this.threadNumber = threadNumber;
         this.stream = stream;
@@ -41,6 +43,8 @@ public class ConsumerWorker implements Runnable
         this.pageBuilder = pageBuilder;
         this.format = DataType.get(format);
         this.ignoreLines = ignoreLines;
+        this.previewSamplingCount = previewSamplingCount;
+
     }
 
     @Override
@@ -62,6 +66,12 @@ public class ConsumerWorker implements Runnable
             if (++loopCounter <= ignoreLines) {
                 logger.info("Skip header lines. line: " + loopCounter);
                 continue;
+            }
+
+            if (Exec.isPreview() && loopCounter - ignoreLines > previewSamplingCount) {
+                logger.info("Skip lines.");
+                break;
+                //continue;
             }
 
             if (record == null) {
