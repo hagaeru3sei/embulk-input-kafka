@@ -3,11 +3,13 @@ package org.embulk.input.kafka.data.format.ext;
 import org.embulk.input.kafka.data.Record;
 import org.msgpack.annotation.Message;
 
+import java.util.List;
+
 // TODO: Change directory.
 
 @Deprecated
 @Message
-public class MessagePack implements Record
+public class MessagePack implements Record<Integer>
 {
     private String version;
     private String datetime;
@@ -55,7 +57,7 @@ public class MessagePack implements Record
     }
 
     @Override
-    public String get(int idx)
+    public String get(Integer idx)
     {
         switch (idx)
         {
@@ -65,6 +67,12 @@ public class MessagePack implements Record
             case 3: return getValue();
         }
         return "";
+    }
+
+    @Override
+    public List<Integer> getKeys()
+    {
+        return null;
     }
 
     @Override

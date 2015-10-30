@@ -224,8 +224,14 @@ public class KafkaInputPlugin implements InputPlugin
         ExecutorService executor = Executors.newSingleThreadExecutor();
 
         List<List<String>> sampled = new ArrayList<List<String>>();
+        DataType dataType = null;
+        try {
+            dataType = DataType.get(task.getDataFormat());
+        } catch (DataTypeNotFoundException e) {
+            logger.error(e.getMessage());
+        }
         for (KafkaStream stream : streams) {
-            executor.submit(new DataSampler(stream, task.getDataFormat(), sampled));
+            executor.submit(new DataSampler(stream, dataType, sampled));
         }
 
         try {
@@ -261,6 +267,7 @@ public class KafkaInputPlugin implements InputPlugin
         List<String> sample = sampled.get(1);
         idx = 0;
         for (String value : sample) {
+            System.out.println(value);
             if (value.equals("true") || value.equals("false")) {
                 columns.get(idx).put("type", "boolean");
                 idx++;

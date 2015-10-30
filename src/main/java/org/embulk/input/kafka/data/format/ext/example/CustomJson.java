@@ -4,11 +4,13 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.embulk.input.kafka.data.Record;
 
+import java.util.List;
+
 /**
  * This is for custom json format sample.
  * If needs a custom logs, please create a new ext classes.
  */
-public class Json implements Record
+public class CustomJson implements Record<Integer>
 {
     private final String version;
     private final String datetime;
@@ -16,10 +18,10 @@ public class Json implements Record
     private final String value;
 
     @JsonCreator
-    private Json(@JsonProperty("id") String version,
-                 @JsonProperty("datetime") String datetime,
-                 @JsonProperty("key") String key,
-                 @JsonProperty("value") String value)
+    private CustomJson(@JsonProperty("version") String version,
+                       @JsonProperty("timestamp") String datetime,
+                       @JsonProperty("key") String key,
+                       @JsonProperty("value") String value)
     {
         this.version = version;
         this.datetime = datetime;
@@ -48,7 +50,7 @@ public class Json implements Record
     }
 
     @Override
-    public String get(int idx)
+    public String get(Integer idx)
     {
         switch (idx)
         {
@@ -58,6 +60,12 @@ public class Json implements Record
             case 3: return getValue();
         }
         return "";
+    }
+
+    @Override
+    public List<Integer> getKeys()
+    {
+        return null;
     }
 
     @Override
