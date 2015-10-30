@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.embulk.input.kafka.data.Record;
 
+import java.util.List;
+
 /**
  * This is for custom json format sample.
  * If needs a custom logs, please create a new ext classes.
@@ -58,6 +60,12 @@ public class CustomJson implements Record<Integer>
             case 3: return getValue();
         }
         return "";
+    }
+
+    @Override
+    public List<Integer> getKeys()
+    {
+        return null;
     }
 
     @Override

@@ -69,6 +69,15 @@ public class Data implements Record<Integer>
     }
 
     @Override
+    public List<Integer> getKeys() {
+        List<Integer> keys = new ArrayList<Integer>();
+        for (int i=0; i<length(); i++) {
+            keys.add(i);
+        }
+        return keys;
+    }
+
+    @Override
     public int length()
     {
         return record.size();

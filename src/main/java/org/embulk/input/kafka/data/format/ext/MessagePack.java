@@ -3,6 +3,8 @@ package org.embulk.input.kafka.data.format.ext;
 import org.embulk.input.kafka.data.Record;
 import org.msgpack.annotation.Message;
 
+import java.util.List;
+
 // TODO: Change directory.
 
 @Deprecated
@@ -65,6 +67,12 @@ public class MessagePack implements Record<Integer>
             case 3: return getValue();
         }
         return "";
+    }
+
+    @Override
+    public List<Integer> getKeys()
+    {
+        return null;
     }
 
     @Override

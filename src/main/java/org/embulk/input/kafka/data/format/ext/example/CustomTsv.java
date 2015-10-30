@@ -2,11 +2,14 @@ package org.embulk.input.kafka.data.format.ext.example;
 
 import org.embulk.input.kafka.data.Record;
 
+import java.util.List;
+
 /**
  * This is for custom tsv format sample.
  * If needs a custom logs, please create a new ext classes.
  */
-public class CustomTsv implements Record<Integer> {
+public class CustomTsv implements Record<Integer>
+{
 
     private String version;
     private String datetime;
@@ -71,6 +74,12 @@ public class CustomTsv implements Record<Integer> {
             case 3: return getValue();
         }
         return "";
+    }
+
+    @Override
+    public List<Integer> getKeys()
+    {
+        return null;
     }
 
     @Override

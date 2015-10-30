@@ -5,8 +5,7 @@ import org.embulk.input.kafka.exception.DataConvertException;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class Json implements Record<String>
 {
@@ -62,6 +61,15 @@ public class Json implements Record<String>
     public String get(String key)
     {
         return record.get(key);
+    }
+
+    @Override
+    public List<String> getKeys() {
+        List<String> keys = new ArrayList<String>();
+        for (Map.Entry<String, String> entry : record.entrySet()) {
+            keys.add(entry.getKey());
+        }
+        return keys;
     }
 
     @Override

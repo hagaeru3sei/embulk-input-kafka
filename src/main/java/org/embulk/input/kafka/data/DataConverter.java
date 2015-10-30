@@ -4,10 +4,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.embulk.input.kafka.data.format.base.Data;
 import org.embulk.input.kafka.data.format.base.Json;
 import org.embulk.input.kafka.data.format.ext.MessagePack;
+import org.embulk.input.kafka.data.format.ext.example.CustomJson;
 import org.embulk.input.kafka.data.format.ext.example.CustomTsv;
 import org.embulk.input.kafka.exception.DataConvertException;
 import org.embulk.spi.Exec;
 import org.slf4j.Logger;
+
+import java.io.IOException;
 
 /**
  * convert byte to Record object.
@@ -28,6 +31,17 @@ public class DataConverter<T> implements Converter
             logger.error(e.getMessage());
         }
         return null;
+    }
+
+    @Deprecated
+    public static Record convertFromCustomJson(byte[] message)
+    {
+        try {
+            return mapper.readValue(message, CustomJson.class);
+        } catch (IOException e) {
+            logger.error(e.getMessage());
+        }
+      return null;
     }
 
     @Deprecated

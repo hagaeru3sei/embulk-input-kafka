@@ -267,6 +267,7 @@ public class KafkaInputPlugin implements InputPlugin
         List<String> sample = sampled.get(1);
         idx = 0;
         for (String value : sample) {
+            System.out.println(value);
             if (value.equals("true") || value.equals("false")) {
                 columns.get(idx).put("type", "boolean");
                 idx++;
