@@ -7,7 +7,7 @@ import org.msgpack.annotation.Message;
 
 @Deprecated
 @Message
-public class MessagePack implements Record
+public class MessagePack implements Record<Integer>
 {
     private String version;
     private String datetime;
@@ -55,7 +55,7 @@ public class MessagePack implements Record
     }
 
     @Override
-    public String get(int idx)
+    public String get(Integer idx)
     {
         switch (idx)
         {

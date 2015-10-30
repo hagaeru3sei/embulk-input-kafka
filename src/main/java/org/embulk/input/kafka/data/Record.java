@@ -1,8 +1,8 @@
 package org.embulk.input.kafka.data;
 
-public interface Record
+public interface Record<T>
 {
-    String get(int idx);
+    String get(T key);
 
     int length();
 }

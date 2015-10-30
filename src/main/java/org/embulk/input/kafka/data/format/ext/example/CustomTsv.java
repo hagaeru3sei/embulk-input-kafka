@@ -6,14 +6,14 @@ import org.embulk.input.kafka.data.Record;
  * This is for custom tsv format sample.
  * If needs a custom logs, please create a new ext classes.
  */
-public class Tsv implements Record {
+public class CustomTsv implements Record<Integer> {
 
     private String version;
     private String datetime;
     private String key;
     private String value;
 
-    public Tsv setVersion(String version)
+    public CustomTsv setVersion(String version)
     {
         this.version = version; return this;
     }
@@ -61,7 +61,7 @@ public class Tsv implements Record {
     }
 
     @Override
-    public String get(int idx)
+    public String get(Integer idx)
     {
         switch (idx)
         {

@@ -22,9 +22,9 @@ public class DataSampler implements Runnable, Sampler
 
     private KafkaStream stream;
     private Logger logger = Exec.getLogger(ConsumerWorker.class);
-    private String format;
+    private DataType format;
 
-    public DataSampler(KafkaStream stream, String format, List<List<String>> sampled)
+    public DataSampler(KafkaStream stream, DataType format, List<List<String>> sampled)
     {
         this.stream = stream;
         this.format = format;
@@ -42,11 +42,11 @@ public class DataSampler implements Runnable, Sampler
     {
         Record record = null;
 
-        switch (DataType.get(format))
+        switch (format)
         {
             case Tsv: record = DataConverter.convert(message, "\t"); break;
             case Csv: record = DataConverter.convert(message, ","); break;
-            case Json: record = DataConverter.JsonConverter(message); break;
+            case Json: record = DataConverter.convertFromJson(message); break;
             case MessagePack:
                 // TODO: implement
                 // NOTE: message pack is not compiled template by this thread.

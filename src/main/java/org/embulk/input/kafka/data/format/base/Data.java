@@ -5,7 +5,7 @@ import org.embulk.input.kafka.data.Record;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Data implements Record
+public class Data implements Record<Integer>
 {
 
     public static class Builder
@@ -58,14 +58,13 @@ public class Data implements Record
         record.add(value);
     }
 
-
     public static Builder builder()
     {
         return new Builder();
     }
 
     @Override
-    public String get(int idx) {
+    public String get(Integer idx) {
         return record.get(idx);
     }
 

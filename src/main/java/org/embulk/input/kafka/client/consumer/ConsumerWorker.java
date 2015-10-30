@@ -44,7 +44,6 @@ public class ConsumerWorker implements Runnable
         this.format = format;
         this.ignoreLines = ignoreLines;
         this.previewSamplingCount = previewSamplingCount;
-
     }
 
     @Override
@@ -71,7 +70,6 @@ public class ConsumerWorker implements Runnable
             if (Exec.isPreview() && loopCounter - ignoreLines > previewSamplingCount) {
                 logger.info("Skip lines.");
                 break;
-                //continue;
             }
 
             if (record == null) {
@@ -81,13 +79,18 @@ public class ConsumerWorker implements Runnable
 
             int idx = 0;
             for (ColumnConfig column : columns.getColumns()) {
+                Column col = column.toColumn(idx);
                 try {
-                    setColumn(column.toColumn(idx), record.get(idx));
+                    switch (format) {
+                        case Json: setColumn(col, record.get(col.getName())); break;
+                        default: setColumn(col, record.get(idx)); break;
+                    }
                 } catch (ColumnTypeNotFoundException e) {
                     logger.error(e.getMessage());
                 }
                 idx++;
             }
+
             pageBuilder.addRecord();
             counter.incrementAndGet();
         }
@@ -101,7 +104,7 @@ public class ConsumerWorker implements Runnable
         {
             case Tsv: record = DataConverter.convert(message, "\t"); break;
             case Csv: record = DataConverter.convert(message, ","); break;
-            case Json: record = DataConverter.JsonConverter(message); break;
+            case Json: record = DataConverter.convertFromJson(message); break;
             case MessagePack:
                 // TODO: implement
                 // NOTE: message pack is not compiled template by this thread.
