@@ -83,6 +83,7 @@ public class ConsumerWorker implements Runnable
                 try {
                     switch (format) {
                         case Json: setColumn(col, record.get(col.getName())); break;
+                        case Ltsv: setColumn(col, record.get(col.getName())); break;
                         default: setColumn(col, record.get(idx)); break;
                     }
                 } catch (ColumnTypeNotFoundException e) {
@@ -102,8 +103,9 @@ public class ConsumerWorker implements Runnable
         Record record = null;
         switch (format)
         {
-            case Tsv: record = DataConverter.convert(message, "\t"); break;
             case Csv: record = DataConverter.convert(message, ","); break;
+            case Tsv: record = DataConverter.convert(message, "\t"); break;
+            case Ltsv: record = DataConverter.convertFromLtsv(message); break;
             case Json: record = DataConverter.convertFromJson(message); break;
             case MessagePack:
                 // TODO: implement

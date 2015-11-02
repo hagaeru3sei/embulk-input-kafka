@@ -4,6 +4,7 @@
 
 - CSV
 - TSV
+- LTSV
 - JSON
 
 ## Overview
@@ -28,12 +29,11 @@
 Kafka data format sample (JSON)
 
 ```json
-{
-  "version"  : "v1",
-  "datetime" : "%Y-%m-%d %H:%M:%S",
-  "key"      : "k",
-  "value"    : "v1"
-}
+{"version":"v1", "timestamp":"%Y-%m-%d %H:%M:%S", "key":"k1", "value":"v1"}
+{"version":"v1", "timestamp":"%Y-%m-%d %H:%M:%S", "key":"k2", "value":"v2"}
+.
+.
+.
 ```
 
 ```yaml
@@ -46,7 +46,7 @@ in:
   data.format: json
   data.columns:
       - {name: "version", type: string}
-      - {name: "datetime", type: string}
+      - {name: "timestamp", type: timestamp}
       - {name: "key", type: string}
       - {name: "value", type: string}
   ignore.lines: 0

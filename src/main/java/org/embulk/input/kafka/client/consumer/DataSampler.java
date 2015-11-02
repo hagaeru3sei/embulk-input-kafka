@@ -44,8 +44,9 @@ public class DataSampler implements Runnable, Sampler
 
         switch (format)
         {
-            case Tsv: record = DataConverter.convert(message, "\t"); break;
             case Csv: record = DataConverter.convert(message, ","); break;
+            case Tsv: record = DataConverter.convert(message, "\t"); break;
+            case Ltsv: record = DataConverter.convertFromLtsv(message); break;
             case Json: record = DataConverter.convertFromJson(message); break;
             case MessagePack:
                 // TODO: implement

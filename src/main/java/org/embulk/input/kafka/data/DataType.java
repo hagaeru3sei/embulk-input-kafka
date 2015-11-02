@@ -9,6 +9,7 @@ public enum DataType
 {
     Json("json"),
     MessagePack("msgpack"),
+    Ltsv("ltsv"),
     Tsv("tsv"),
     Csv("csv");
 
