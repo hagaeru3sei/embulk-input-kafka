@@ -2,6 +2,7 @@ package org.embulk.input.kafka.data.format.base;
 
 import org.embulk.input.kafka.data.Record;
 import org.embulk.input.kafka.exception.DataConvertException;
+import org.embulk.input.kafka.utils.StringUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -39,7 +40,7 @@ public class Ltsv implements Record<String>
         for (String col : row) {
             String[] c = col.split(":", 2);
             String key = c[0];
-            String value = c[1];
+            String value = StringUtils.trim(c[1], "\"");
             record.put(key, value);
         }
         return this;

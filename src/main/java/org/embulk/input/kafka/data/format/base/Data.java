@@ -1,6 +1,7 @@
 package org.embulk.input.kafka.data.format.base;
 
 import org.embulk.input.kafka.data.Record;
+import org.embulk.input.kafka.utils.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,7 +44,7 @@ public class Data implements Record<Integer>
     {
         String[] data = new String(message).split(separator);
         for (String aData : data) {
-            set(aData);
+            set(StringUtils.trim(aData, "\""));
         }
         return this;
     }
