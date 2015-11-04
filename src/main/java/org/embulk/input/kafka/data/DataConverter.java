@@ -12,6 +12,8 @@ import org.embulk.spi.Exec;
 import org.slf4j.Logger;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * convert byte to Record object.
@@ -67,9 +69,14 @@ public class DataConverter implements Converter
         return tsv;
     }
 
-    public static Data convert(byte[] message, String separator)
+    public static Data convert(byte[] message,
+                               String separator,
+                               String enclosedChar)
     {
-        return builder.setMessage(message).setSeparator(separator).build();
+        return builder.setMessage(message)
+            .setSeparator(separator)
+            .setEnclosedChar(enclosedChar)
+            .build();
     }
 
     @Override

@@ -23,12 +23,17 @@ public class DataSampler implements Runnable, Sampler
     private KafkaStream stream;
     private Logger logger = Exec.getLogger(ConsumerWorker.class);
     private DataType format;
+    private String enclosedChar;
 
-    public DataSampler(KafkaStream stream, DataType format, List<List<String>> sampled)
+    public DataSampler(KafkaStream stream,
+                       DataType format,
+                       List<List<String>> sampled,
+                       String enclosedChar)
     {
         this.stream = stream;
         this.format = format;
         this.sampled = sampled;
+        this.enclosedChar = enclosedChar;
     }
 
 
@@ -44,8 +49,8 @@ public class DataSampler implements Runnable, Sampler
 
         switch (format)
         {
-            case Csv: record = DataConverter.convert(message, ","); break;
-            case Tsv: record = DataConverter.convert(message, "\t"); break;
+            case Csv: record = DataConverter.convert(message, ",", enclosedChar); break;
+            case Tsv: record = DataConverter.convert(message, "\t", enclosedChar); break;
             case Ltsv: record = DataConverter.convertFromLtsv(message); break;
             case Json: record = DataConverter.convertFromJson(message); break;
             case MessagePack:
