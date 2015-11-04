@@ -78,6 +78,7 @@ public class DataSampler implements Runnable, Sampler
             for (int idx=0; idx<record.length(); idx++) {
                 switch (format) {
                     case Json: r.add(record.get(record.getKeys().get(idx))); break;
+                    case Ltsv: r.add(record.get(record.getKeys().get(idx))); break;
                     default: r.add(record.get(idx));
                 }
             }
