@@ -10,6 +10,7 @@ in:
   auto.offset.reset: "smallest"
   ignore.lines: "0"
   data.format: "csv"
+  data.column.enclosedChar: ""
   data.columns:
     - {name: 'c1', type: string}
     - {name: 'c2', type: long}

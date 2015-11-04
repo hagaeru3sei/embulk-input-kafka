@@ -10,6 +10,7 @@ import org.embulk.input.kafka.client.consumer.ConsumerWorker;
 import org.embulk.input.kafka.client.consumer.DataSampler;
 import org.embulk.input.kafka.data.DataType;
 import org.embulk.input.kafka.exception.DataTypeNotFoundException;
+import org.embulk.input.kafka.utils.StringUtils;
 import org.embulk.spi.*;
 import org.slf4j.Logger;
 
@@ -70,6 +71,10 @@ public class KafkaInputPlugin implements InputPlugin
         @ConfigDefault("10")
         int getPreviewSamplingCount();
 
+        @Config("data.column.enclosedChar")
+        @ConfigDefault("")
+        String getEnclosedChar();
+
         @ConfigInject
         BufferAllocator getBufferAllocator();
     }
@@ -100,6 +105,10 @@ public class KafkaInputPlugin implements InputPlugin
 
         @Config("data.format")
         String getDataFormat();
+
+        @Config("data.column.enclosedChar")
+        @ConfigDefault("")
+        String getEnclosedChar();
     }
 
     @Override
@@ -171,7 +180,8 @@ public class KafkaInputPlugin implements InputPlugin
                         pageBuilder,
                         format,
                         Integer.valueOf(task.getIgnoreLines()),
-                        task.getPreviewSamplingCount()));
+                        task.getPreviewSamplingCount(),
+                        task.getEnclosedChar()));
             } catch (DataTypeNotFoundException e) {
                 logger.error(e.getMessage());
             }
@@ -231,7 +241,7 @@ public class KafkaInputPlugin implements InputPlugin
             logger.error(e.getMessage());
         }
         for (KafkaStream stream : streams) {
-            executor.submit(new DataSampler(stream, dataType, sampled));
+            executor.submit(new DataSampler(stream, dataType, sampled, task.getEnclosedChar()));
         }
 
         try {
@@ -268,6 +278,9 @@ public class KafkaInputPlugin implements InputPlugin
         idx = 0;
         for (String value : sample) {
             System.out.println(value);
+            if (!task.getEnclosedChar().isEmpty()) {
+                value = StringUtils.trim(value, task.getEnclosedChar());
+            }
             if (value.equals("true") || value.equals("false")) {
                 columns.get(idx).put("type", "boolean");
                 idx++;

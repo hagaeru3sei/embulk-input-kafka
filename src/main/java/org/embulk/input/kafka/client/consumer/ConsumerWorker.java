@@ -25,6 +25,7 @@ public class ConsumerWorker implements Runnable
     private final DataType format;
     private final int ignoreLines;
     private final int previewSamplingCount;
+    private final String enclosedChar;
 
     public ConsumerWorker(
         KafkaStream stream,
@@ -34,7 +35,8 @@ public class ConsumerWorker implements Runnable
         PageBuilder pageBuilder,
         DataType format,
         int ignoreLines,
-        int previewSamplingCount) throws DataTypeNotFoundException {
+        int previewSamplingCount,
+        String enclosedChar) throws DataTypeNotFoundException {
 
         this.threadNumber = threadNumber;
         this.stream = stream;
@@ -44,6 +46,7 @@ public class ConsumerWorker implements Runnable
         this.format = format;
         this.ignoreLines = ignoreLines;
         this.previewSamplingCount = previewSamplingCount;
+        this.enclosedChar = enclosedChar;
     }
 
     @Override
@@ -103,8 +106,8 @@ public class ConsumerWorker implements Runnable
         Record record = null;
         switch (format)
         {
-            case Csv: record = DataConverter.convert(message, ","); break;
-            case Tsv: record = DataConverter.convert(message, "\t"); break;
+            case Csv: record = DataConverter.convert(message, ",", enclosedChar); break;
+            case Tsv: record = DataConverter.convert(message, "\t", enclosedChar); break;
             case Ltsv: record = DataConverter.convertFromLtsv(message); break;
             case Json: record = DataConverter.convertFromJson(message); break;
             case MessagePack:
