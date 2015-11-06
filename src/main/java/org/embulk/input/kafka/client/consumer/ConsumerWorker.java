@@ -8,10 +8,14 @@ import org.embulk.input.kafka.data.Record;
 import org.embulk.input.kafka.data.column.ColumnType;
 import org.embulk.input.kafka.exception.ColumnTypeNotFoundException;
 import org.embulk.input.kafka.exception.DataTypeNotFoundException;
+import org.embulk.input.kafka.exception.DateFormatException;
+import org.embulk.input.kafka.utils.DateUtils;
 import org.embulk.spi.*;
+import org.embulk.spi.time.Timestamp;
 import org.slf4j.Logger;
 
-import java.sql.Timestamp;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ConsumerWorker implements Runnable
@@ -26,6 +30,7 @@ public class ConsumerWorker implements Runnable
     private final int ignoreLines;
     private final int previewSamplingCount;
     private final String enclosedChar;
+    private SimpleDateFormat dateFormat;
 
     public ConsumerWorker(
         KafkaStream stream,
@@ -91,7 +96,12 @@ public class ConsumerWorker implements Runnable
                     }
                 } catch (ColumnTypeNotFoundException e) {
                     logger.error(e.getMessage());
+                } catch (DateFormatException e) {
+                    logger.error(e.getMessage());
+                } catch (ParseException e) {
+                    logger.error(e.getMessage());
                 }
+
                 idx++;
             }
 
@@ -119,7 +129,7 @@ public class ConsumerWorker implements Runnable
     }
 
     private void setColumn(Column column, String value)
-            throws ColumnTypeNotFoundException
+        throws ColumnTypeNotFoundException, DateFormatException, ParseException
     {
         switch (ColumnType.get(column.getType().getName()))
         {
@@ -128,10 +138,10 @@ public class ConsumerWorker implements Runnable
             case Double:   pageBuilder.setDouble(column, Double.parseDouble(value)); break;
             case String:   pageBuilder.setString(column, value); break;
             case Timestamp:
+                if (dateFormat == null) dateFormat = DateUtils.format(value);
                 pageBuilder.setTimestamp(
                     column,
-                    org.embulk.spi.time.Timestamp.ofEpochSecond(
-                        Timestamp.valueOf(value).getTime()/1000));
+                    Timestamp.ofEpochSecond(dateFormat.parse(value).getTime()/1000));
                 break;
         }
     }

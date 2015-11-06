@@ -39,7 +39,7 @@ public class Data implements Record<Integer>
     private final byte[] message;
     private final String separator;
     private final String enclosedChar;
-    private final List<String> record = new ArrayList<>();
+    private final List<String> record = new ArrayList<String>();
 
     public Data(Builder builder)
     {
@@ -86,7 +86,7 @@ public class Data implements Record<Integer>
     @Override
     public List<Integer> getKeys()
     {
-        List<Integer> keys = new ArrayList<>();
+        List<Integer> keys = new ArrayList<Integer>();
         for (int i=0; i<length(); i++) {
             keys.add(i);
         }
