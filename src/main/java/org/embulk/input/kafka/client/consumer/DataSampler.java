@@ -79,7 +79,7 @@ public class DataSampler implements Runnable, Sampler
                 continue;
             }
 
-            List<String> r = new ArrayList<>();
+            List<String> r = new ArrayList<String>();
             for (int idx=0; idx<record.length(); idx++) {
                 switch (format) {
                     case Json: r.add(record.get(record.getKeys().get(idx))); break;

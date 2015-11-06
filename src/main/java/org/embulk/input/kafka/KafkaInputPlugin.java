@@ -302,16 +302,26 @@ public class KafkaInputPlugin implements InputPlugin
             } catch (NumberFormatException e) {
                 logger.debug(e.getMessage());
             }
+            // TODO: guess format and Add date util class
             try {
-                // TODO: guess format and Add date util class
-                SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                format.parse(value);
+                SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                df.parse(value);
                 columns.get(idx).put("type", "timestamp");
                 columns.get(idx).put("format", "%Y-%m-%d %H:%M:%S");
                 idx++;
                 continue;
             } catch (ParseException e) {
                 logger.debug(e.getMessage());
+            }
+            try {
+                SimpleDateFormat df = new SimpleDateFormat("[dd/MMM/yyyy:HH:mm:ss Z]", Locale.ENGLISH);
+                df.parse(value);
+                columns.get(idx).put("type", "timestamp");
+                columns.get(idx).put("format", "[%d/%b/%Y:%H:%M:%S %z]");
+                idx++;
+                continue;
+            } catch (ParseException e2) {
+                logger.debug(e2.getMessage());
             }
 
             columns.get(idx).put("type", "string");
