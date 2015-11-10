@@ -5,7 +5,7 @@ import org.embulk.input.kafka.exception.DataConvertException;
 import org.embulk.input.kafka.utils.StringUtils;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -27,7 +27,7 @@ public class Ltsv implements Record<String>
     }
 
     private final byte[] message;
-    private final Map<String, String> record = new HashMap<String, String>();
+    private final Map<String, String> record = new LinkedHashMap<String, String>();
 
     public Ltsv(Builder builder)
     {

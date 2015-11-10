@@ -234,6 +234,7 @@ public class KafkaInputPlugin implements InputPlugin
         ExecutorService executor = Executors.newSingleThreadExecutor();
 
         List<List<String>> sampled = new ArrayList<List<String>>();
+        List<String> columnNames = new ArrayList<String>();
         DataType dataType = null;
         try {
             dataType = DataType.get(task.getDataFormat());
@@ -241,7 +242,7 @@ public class KafkaInputPlugin implements InputPlugin
             logger.error(e.getMessage());
         }
         for (KafkaStream stream : streams) {
-            executor.submit(new DataSampler(stream, dataType, sampled, task.getEnclosedChar()));
+            executor.submit(new DataSampler(stream, dataType, sampled, columnNames, task.getEnclosedChar()));
         }
 
         try {
@@ -259,9 +260,11 @@ public class KafkaInputPlugin implements InputPlugin
         List<String> header = sampled.get(0);
         int idx = 0;
         for (String th : header) {
-            Map<String, String> column = new HashMap<String, String>();
+            Map<String, String> column = new LinkedHashMap<String, String>();
             String name;
-            if (task.getIgnoreLines().equals("0")) {
+            if (!columnNames.isEmpty()) {
+                name = columnNames.get(idx);
+            } else if (task.getIgnoreLines().equals("0")) {
                 name = "c" + String.valueOf(idx);
             } else {
                 name = th;
@@ -277,7 +280,6 @@ public class KafkaInputPlugin implements InputPlugin
         List<String> sample = sampled.get(1);
         idx = 0;
         for (String value : sample) {
-            System.out.println(value);
             if (!task.getEnclosedChar().isEmpty()) {
                 value = StringUtils.trim(value, task.getEnclosedChar());
             }
