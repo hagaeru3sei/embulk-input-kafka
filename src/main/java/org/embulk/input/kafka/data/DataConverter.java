@@ -12,8 +12,6 @@ import org.embulk.spi.Exec;
 import org.slf4j.Logger;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * convert byte to Record object.
@@ -37,10 +35,12 @@ public class DataConverter implements Converter
         return null;
     }
 
-    public static Ltsv convertFromLtsv(byte[] message)
+    public static Ltsv convertFromLtsv(byte[] message, String enclosedChar)
     {
         try {
-            return ltsvBuilder.setMessage(message).build();
+            return ltsvBuilder.setMessage(message)
+                .setEnclosedChar(enclosedChar)
+                .build();
         } catch (DataConvertException e) {
             logger.error(e.getMessage());
         }
