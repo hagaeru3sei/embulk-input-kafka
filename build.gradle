@@ -12,11 +12,11 @@ configurations {
     provided
 }
 
-version = "0.1.5"
+version = "0.1.6"
 
 dependencies {
-    compile  "org.embulk:embulk-core:0.7.5"
-    provided "org.embulk:embulk-core:0.7.5"
+    compile  "org.embulk:embulk-core:0.7.8"
+    provided "org.embulk:embulk-core:0.7.8"
     // compile "YOUR_JAR_DEPENDENCY_GROUP:YOUR_JAR_DEPENDENCY_MODULE:YOUR_JAR_DEPENDENCY_VERSION"
     compile  "org.apache.kafka:kafka-clients:0.8.2.1"
     compile  "org.apache.kafka:kafka-examples:0.8.2.1"
