@@ -45,6 +45,7 @@ in:
   topic: topic1
   group: group1
   data.format: json
+  data.column.enclosedChar: ""
   data.columns:
       - {name: "version", type: string}
       - {name: "timestamp", type: timestamp}
