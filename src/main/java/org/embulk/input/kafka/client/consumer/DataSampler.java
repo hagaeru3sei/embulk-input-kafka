@@ -55,7 +55,7 @@ public class DataSampler implements Runnable, Sampler {
                 record = DataConverter.convert(message, "\t", enclosedChar);
                 break;
             case Ltsv:
-                record = DataConverter.convertFromLtsv(message);
+                record = DataConverter.convertFromLtsv(message, enclosedChar);
                 break;
             case Json:
                 record = DataConverter.convertFromJson(message);

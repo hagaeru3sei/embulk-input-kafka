@@ -14,10 +14,16 @@ public class Ltsv implements Record<String>
     public static class Builder
     {
         private byte[] message;
+        private String enclosedChar;
 
         public Builder setMessage(byte[] message)
         {
             this.message = message; return this;
+        }
+
+        public Builder setEnclosedChar(String enclosedChar)
+        {
+             this.enclosedChar = enclosedChar; return this;
         }
 
         public Ltsv build() throws DataConvertException
@@ -27,20 +33,29 @@ public class Ltsv implements Record<String>
     }
 
     private final byte[] message;
+    private final String enclosedChar;
     private final Map<String, String> record = new LinkedHashMap<String, String>();
 
     public Ltsv(Builder builder)
     {
         this.message = builder.message;
+        this.enclosedChar = builder.enclosedChar;
     }
 
     public Ltsv build() throws DataConvertException
     {
         String[] row = new String(message).split("\t");
+        boolean isTrim = !enclosedChar.isEmpty();
         for (String col : row) {
             String[] c = col.split(":", 2);
-            String key = c[0];
-            String value = StringUtils.trim(c[1], "\"");
+            String key, value;
+            if (isTrim) {
+                key = StringUtils.trim(c[0].trim(), "\"");
+                value = StringUtils.trim(c[1].trim(), "\"");
+            } else {
+                key = c[0];
+                value = c[1];
+            }
             record.put(key, value);
         }
         return this;
