@@ -20,7 +20,7 @@
 - **port**: description (integer, default: `2181`)
 - **topic**: description (string, default: `test`)
 - **data.format**: description (string, default: `null`)
-  **data.column.enclosedChar**: description (string, default: ``)
+- **data.column.enclosedChar**: description (string, default: ``)
 - **data.columns**: description (string, default: `null`)
 - **ignore.lines**: description (integer, default: `0`)
 - **preview.sampling.count**: description (integer, default: `10`)
