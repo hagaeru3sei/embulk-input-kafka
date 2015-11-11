@@ -50,8 +50,8 @@ public class Ltsv implements Record<String>
             String[] c = col.split(":", 2);
             String key, value;
             if (isTrim) {
-                key = StringUtils.trim(c[0].trim(), "\"");
-                value = StringUtils.trim(c[1].trim(), "\"");
+                key = StringUtils.trim(c[0].trim(), enclosedChar);
+                value = StringUtils.trim(c[1].trim(), enclosedChar);
             } else {
                 key = c[0];
                 value = c[1];
