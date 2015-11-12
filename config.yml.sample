@@ -1,7 +1,6 @@
 in:
   type: kafka
-  host: "localhost"
-  port: 2181
+  zookeepers: "localhost:2181"
   topic: "topic1"
   group.id: "group1"
   zookeeper.session.timeout.ms: "10000"
@@ -18,5 +17,6 @@ in:
     - {name: 'c4', type: double}
     - {name: 'c5', format: '%Y-%m-%d %H:%M:%S', type: timestamp}
   preview.sampling.count: 10
+  thread.count: 1
 out:
   type: stdout

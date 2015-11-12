@@ -25,18 +25,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class KafkaInputPlugin implements InputPlugin
 {
 
-    // TODO: move to config
-    private final static String DELIMITER_DOMAIN_PORT = ":";
-
     private Logger logger = Exec.getLogger(KafkaInputPlugin.class);
 
     public interface PluginTask extends Task
     {
-        @Config("host")
-        String getHost();
-
-        @Config("port")
-        String getPort();
+        @Config("zookeepers")
+        String getZookeepers();
 
         @Config("topic")
         String getTopic();
@@ -64,6 +58,10 @@ public class KafkaInputPlugin implements InputPlugin
         @ConfigDefault("null")
         String getDataFormat();
 
+        @Config("data.column.enclosedChar")
+        @ConfigDefault("")
+        String getEnclosedChar();
+
         @Config("data.columns")
         SchemaConfig getColumns();
 
@@ -71,9 +69,9 @@ public class KafkaInputPlugin implements InputPlugin
         @ConfigDefault("10")
         int getPreviewSamplingCount();
 
-        @Config("data.column.enclosedChar")
-        @ConfigDefault("")
-        String getEnclosedChar();
+        @Config("thread.count")
+        @ConfigDefault("1")
+        int getThreadCount();
 
         @ConfigInject
         BufferAllocator getBufferAllocator();
@@ -81,11 +79,8 @@ public class KafkaInputPlugin implements InputPlugin
 
     public interface GuessTask extends Task
     {
-        @Config("host")
-        String getHost();
-
-        @Config("port")
-        String getPort();
+        @Config("zookeepers")
+        String getZookeepers();
 
         @Config("topic")
         String getTopic();
@@ -158,7 +153,7 @@ public class KafkaInputPlugin implements InputPlugin
         ConsumerConnector consumer = Consumer.createJavaConsumerConnector(config);
         List<KafkaStream<byte[], byte[]>> streams = getStreams(task, consumer);
 
-        ExecutorService executor = Executors.newSingleThreadExecutor();
+        ExecutorService executor = Executors.newFixedThreadPool(task.getThreadCount());
 
         AtomicInteger counter = new AtomicInteger(0);
 
@@ -217,7 +212,7 @@ public class KafkaInputPlugin implements InputPlugin
         GuessTask task = config.loadConfig(GuessTask.class);
 
         Properties props = new Properties();
-        props.put("zookeeper.connect", task.getHost() + ":" + task.getPort());
+        props.put("zookeeper.connect", task.getZookeepers());
         props.put("group.id", "guess-" + UUID.randomUUID().toString()); // --from-beginning
         props.put("zookeeper.session.timeout.ms", task.getZookeeperSessionTimeoutMs());
         props.put("zookeeper.sync.time.ms", task.getZookeeperSyncTimeMs());
@@ -342,8 +337,8 @@ public class KafkaInputPlugin implements InputPlugin
     private ConsumerConfig getConsumerConfig(PluginTask task)
     {
         Properties props = new Properties();
-        props.put("zookeeper.connect", task.getHost() + DELIMITER_DOMAIN_PORT + task.getPort());
-        props.put("group.id", Exec.isPreview() ? UUID.randomUUID().toString() : task.getGroupId());
+        props.put("zookeeper.connect", task.getZookeepers());
+        props.put("group.id", Exec.isPreview() ? "preview-" + UUID.randomUUID().toString() : task.getGroupId());
         props.put("zookeeper.session.timeout.ms", task.getZookeeperSessionTimeoutMs());
         props.put("zookeeper.sync.time.ms", task.getZookeeperSyncTimeMs());
         props.put("auto.commit.interval.ms", task.getAutoCommitIntervalMs());
