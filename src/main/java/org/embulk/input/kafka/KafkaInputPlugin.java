@@ -343,7 +343,7 @@ public class KafkaInputPlugin implements InputPlugin
     {
         Properties props = new Properties();
         props.put("zookeeper.connect", task.getHost() + DELIMITER_DOMAIN_PORT + task.getPort());
-        props.put("group.id", Exec.isPreview() ? UUID.randomUUID().toString() : task.getGroupId());
+        props.put("group.id", Exec.isPreview() ? "preview-" + UUID.randomUUID().toString() : task.getGroupId());
         props.put("zookeeper.session.timeout.ms", task.getZookeeperSessionTimeoutMs());
         props.put("zookeeper.sync.time.ms", task.getZookeeperSyncTimeMs());
         props.put("auto.commit.interval.ms", task.getAutoCommitIntervalMs());
