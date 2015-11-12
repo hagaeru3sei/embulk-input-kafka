@@ -16,14 +16,14 @@
 
 ## Configuration
 
-- **host**: description (string, required)
-- **port**: description (integer, default: `2181`)
+- **zookeepers**: description (string, required)
 - **topic**: description (string, default: `test`)
 - **data.format**: description (string, default: `null`)
 - **data.column.enclosedChar**: description (string, default: ``)
 - **data.columns**: description (string, default: `null`)
 - **ignore.lines**: description (integer, default: `0`)
 - **preview.sampling.count**: description (integer, default: `10`)
+- **thread.count**: description (integer, default: `1`)
 
 ## Example
 
@@ -37,11 +37,12 @@ Kafka data format sample (JSON)
 .
 ```
 
+Config
+
 ```yaml
 in:
   type: kafka
-  host: localhost
-  port: 2181
+  zookeepers: localhost:2181
   topic: topic1
   group: group1
   data.format: json
@@ -53,6 +54,7 @@ in:
       - {name: "value", type: string}
   ignore.lines: 0
   preview.sampling.count: 10
+  thread.count: 1
 out:
   type: file
   path_prefix: kafka-input
@@ -66,9 +68,9 @@ out:
       value: {type: string}
 ```
 
-```
-$ cp config.yml.sample config.yml
-```
+- zookeepers   - host1:host1_port,host2:host2_port,..
+- data.format  - (csv|tsv|ltsv|json)
+- ignore.lines - Ignore header lines. this is for csv,tsv with header column names.
 
 
 ## Build
@@ -81,13 +83,13 @@ $ ./gradlew gem
 $ ./gradlew package
 ```
 
-## Run
-
-```
-$ embulk run -I./lib config.yml
-```
-
 ## Guess
+
+```
+$ cp config.yml.sample config.yml
+```
+
+Edit "zookeepers, topic, group, data.format" section
 
 ```
 $ embulk guess -I./lib -g kafka config.yml -o config-guess.yml
@@ -97,5 +99,11 @@ $ embulk guess -I./lib -g kafka config.yml -o config-guess.yml
 
 ```
 $ embulk preview -I./lib config.yml
+```
+
+## Run
+
+```
+$ embulk run -I./lib config.yml
 ```
 
