@@ -36,7 +36,8 @@ public class Json implements Record<String>
     {
         JSONObject obj;
         try {
-            // TODO: An object is an unordered set of name/value pairs.
+            // TODO: follow a order
+            // An object is an unordered set of name/value pairs.
             obj = new JSONObject(new String(message));
         } catch (JSONException e) {
             throw new DataConvertException(e.getMessage());
