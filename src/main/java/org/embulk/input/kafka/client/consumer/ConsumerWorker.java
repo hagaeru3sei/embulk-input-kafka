@@ -98,11 +98,7 @@ public class ConsumerWorker implements Runnable
                             setColumn(col, record.get(idx));
                             break;
                     }
-                } catch (ColumnTypeNotFoundException e) {
-                    logger.error(e.getMessage());
-                } catch (DateFormatException e) {
-                    logger.error(e.getMessage());
-                } catch (ParseException e) {
+                } catch (ColumnTypeNotFoundException | DateFormatException | ParseException e) {
                     logger.error(e.getMessage());
                 }
 
