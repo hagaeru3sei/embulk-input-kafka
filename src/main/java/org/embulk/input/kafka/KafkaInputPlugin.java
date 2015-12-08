@@ -350,7 +350,7 @@ public class KafkaInputPlugin implements InputPlugin
     private List<KafkaStream<byte[], byte[]>> getStreams(PluginTask task, ConsumerConnector consumer)
     {
         HashMap<String, Integer> topicCountMap = new HashMap<String, Integer>();
-        topicCountMap.put(task.getTopic(), 1);
+        topicCountMap.put(task.getTopic(), task.getThreadCount());
         Map<String, List<KafkaStream<byte[], byte[]>>> consumerMap =
             consumer.createMessageStreams(topicCountMap);
 
