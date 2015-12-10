@@ -85,27 +85,30 @@ public class ConsumerWorker implements Runnable
                 continue;
             }
 
-            int idx = 0;
-            for (ColumnConfig column : columns.getColumns()) {
-                Column col = column.toColumn(idx);
-                try {
-                    switch (format) {
-                        case Json:
-                        case Ltsv:
-                            setColumn(col, record.get(col.getName()));
-                            break;
-                        default:
-                            setColumn(col, record.get(idx));
-                            break;
+            synchronized (pageBuilder) {
+                synchronized (columns) {
+                    int idx = 0;
+                    for (ColumnConfig column : columns.getColumns()) {
+                        Column col = column.toColumn(idx);
+                        try {
+                            switch (format) {
+                                case Json:
+                                case Ltsv:
+                                    setColumn(col, record.get(col.getName()));
+                                    break;
+                                default:
+                                    setColumn(col, record.get(idx));
+                                    break;
+                            }
+                        } catch (ColumnTypeNotFoundException | DateFormatException | ParseException e) {
+                            logger.error(e.getMessage());
+                        }
+
+                        idx++;
                     }
-                } catch (ColumnTypeNotFoundException | DateFormatException | ParseException e) {
-                    logger.error(e.getMessage());
                 }
-
-                idx++;
+                pageBuilder.addRecord();
             }
-
-            pageBuilder.addRecord();
             counter.incrementAndGet();
         }
         logger.info("Shutting down Thread: " + threadNumber);
@@ -128,7 +131,7 @@ public class ConsumerWorker implements Runnable
         return record;
     }
 
-    private void setColumn(Column column, String value)
+    private synchronized void setColumn(Column column, String value)
         throws ColumnTypeNotFoundException, DateFormatException, ParseException
     {
         switch (ColumnType.get(column.getType().getName()))
