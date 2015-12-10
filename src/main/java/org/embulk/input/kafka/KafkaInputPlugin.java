@@ -26,6 +26,7 @@ public class KafkaInputPlugin implements InputPlugin
 {
 
     private Logger logger = Exec.getLogger(KafkaInputPlugin.class);
+    private volatile AtomicInteger counter = new AtomicInteger(0);
 
     public interface PluginTask extends Task
     {
@@ -154,8 +155,6 @@ public class KafkaInputPlugin implements InputPlugin
         List<KafkaStream<byte[], byte[]>> streams = getStreams(task, consumer);
 
         ExecutorService executor = Executors.newFixedThreadPool(task.getThreadCount());
-
-        AtomicInteger counter = new AtomicInteger(0);
 
         int threadNumber = 0;
         DataType format = null;
