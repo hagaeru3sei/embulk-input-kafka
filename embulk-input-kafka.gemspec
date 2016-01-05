@@ -4,7 +4,7 @@ Gem::Specification.new do |spec|
   spec.version       = "0.1.9"
   spec.authors       = ["Nobuaki Mochizuki"]
   spec.summary       = %[Kafka input plugin for Embulk]
-  spec.description   = %[Loads records from Kafka.]
+  spec.description   = %[Loading records from Apache Kafka.]
   spec.email         = ["hagaeru3sei@gmail.com"]
   spec.licenses      = ["MIT"]
   spec.homepage      = "https://github.com/hagaeru3sei/embulk-input-kafka"

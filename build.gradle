@@ -33,6 +33,10 @@ task classpath(type: Copy, dependsOn: ["jar"]) {
 }
 clean { delete "classpath" }
 
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.10'
+}
+
 task gem(type: JRubyExec, dependsOn: ["gemspec", "classpath"]) {
     jrubyArgs "-rrubygems/gem_runner", "-eGem::GemRunner.new.run(ARGV)", "build"
     script "${project.name}.gemspec"
@@ -62,7 +66,7 @@ Gem::Specification.new do |spec|
   spec.description   = %[Loading records from Apache Kafka.]
   spec.email         = ["hagaeru3sei@gmail.com"]
   spec.licenses      = ["MIT"]
-  spec.hmepage       = "https://github.com/hagaeru3sei/embulk-input-kafka"
+  spec.homepage      = "https://github.com/hagaeru3sei/embulk-input-kafka"
 
   spec.files         = `git ls-files`.split("\n") + Dir["classpath/*.jar"]
   spec.test_files    = spec.files.grep(%r"^(test|spec)/")
