@@ -15,10 +15,10 @@ configurations {
 version = "0.1.9"
 
 dependencies {
-    compile  "org.embulk:embulk-core:0.7.10"
-    provided "org.embulk:embulk-core:0.7.10"
+    compile  "org.embulk:embulk-core:0.8.8"
+    provided "org.embulk:embulk-core:0.8.8"
     // compile "YOUR_JAR_DEPENDENCY_GROUP:YOUR_JAR_DEPENDENCY_MODULE:YOUR_JAR_DEPENDENCY_VERSION"
-    compile  "org.apache.kafka:kafka_2.11:0.9.0.0"
+    compile  "org.apache.kafka:kafka_2.11:0.9.0.1"
     compile  "com.fasterxml.jackson.core:com.springsource.com.fasterxml.jackson.core.jackson-core:2.0.2"
     compile  "org.msgpack:msgpack:0.6.12"
     compile  "org.xerial.snappy:snappy-java:1.1.2"
@@ -34,7 +34,7 @@ task classpath(type: Copy, dependsOn: ["jar"]) {
 clean { delete "classpath" }
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '2.10'
+    gradleVersion = '2.12'
 }
 
 task gem(type: JRubyExec, dependsOn: ["gemspec", "classpath"]) {
