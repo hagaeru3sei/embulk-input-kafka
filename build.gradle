@@ -12,13 +12,13 @@ configurations {
     provided
 }
 
-version = "0.1.9"
+version = "0.1.10"
 
 dependencies {
-    compile  "org.embulk:embulk-core:0.8.13"
-    provided "org.embulk:embulk-core:0.8.13"
+    compile  "org.embulk:embulk-core:0.8.17"
+    provided "org.embulk:embulk-core:0.8.17"
     // compile "YOUR_JAR_DEPENDENCY_GROUP:YOUR_JAR_DEPENDENCY_MODULE:YOUR_JAR_DEPENDENCY_VERSION"
-    compile  "org.apache.kafka:kafka_2.11:0.10.0.1"
+    compile  "org.apache.kafka:kafka_2.11:0.10.2.0"
     compile  "com.fasterxml.jackson.core:com.springsource.com.fasterxml.jackson.core.jackson-core:2.0.2"
     compile  "org.msgpack:msgpack:0.6.12"
     compile  "org.xerial.snappy:snappy-java:1.1.2.6"
