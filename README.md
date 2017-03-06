@@ -92,7 +92,7 @@ $ cp config.yml.sample config.yml
 Edit "zookeepers, topic, group, data.format" section
 
 ```
-$ embulk guess -I./lib -g kafka config.yml -o config-guess.yml
+$ embulk guess -I./lib config.yml -o config-guess.yml
 ```
 
 ## Preview

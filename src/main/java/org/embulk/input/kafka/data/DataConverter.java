@@ -16,73 +16,60 @@ import java.io.IOException;
 /**
  * convert byte to Record object.
  */
-public class DataConverter implements Converter
-{
-    private static final ObjectMapper mapper = new ObjectMapper();
-    private static final MessagePack magpack = new MessagePack();
-    private static final Logger logger = Exec.getLogger(DataConverter.class);
-    private static final Data.Builder builder = Data.builder();
-    private static final Json.Builder jsonBuilder = Json.builder();
-    private static final Ltsv.Builder ltsvBuilder = Ltsv.builder();
+public class DataConverter implements Converter {
 
-    public static Json convertFromJson(byte[] message)
-    {
-        try {
-            return jsonBuilder.setMessage(message).build();
-        } catch (DataConvertException e) {
-            logger.error(e.getMessage());
-        }
-        return null;
-    }
+  private static final ObjectMapper mapper = new ObjectMapper();
+  private static final MessagePack magpack = new MessagePack();
+  private static final Logger logger = Exec.getLogger(DataConverter.class);
+  private static final Data.Builder builder = Data.builder();
+  private static final Json.Builder jsonBuilder = Json.builder();
+  private static final Ltsv.Builder ltsvBuilder = Ltsv.builder();
 
-    public static Ltsv convertFromLtsv(byte[] message, String enclosedChar)
-    {
-        try {
-            return ltsvBuilder.setMessage(message)
-                .setEnclosedChar(enclosedChar)
-                .build();
-        } catch (DataConvertException e) {
-            logger.error(e.getMessage());
-        }
-        return null;
+  public static Json convertFromJson(byte[] message) {
+    try {
+      return jsonBuilder.setMessage(message).build();
+    } catch (DataConvertException e) {
+      logger.error(e.getMessage());
     }
+    return null;
+  }
 
-    @Deprecated
-    public static Record convertFromCustomJson(byte[] message)
-    {
-        try {
-            return mapper.readValue(message, CustomJson.class);
-        } catch (IOException e) {
-            logger.error(e.getMessage());
-        }
-      return null;
+  public static Ltsv convertFromLtsv(byte[] message, String enclosedChar) {
+    try {
+      return ltsvBuilder.setMessage(message).setEnclosedChar(enclosedChar).build();
+    } catch (DataConvertException e) {
+      logger.error(e.getMessage());
     }
+    return null;
+  }
 
-    @Deprecated
-    public static Record convertFromCustomTsv(byte[] message)
-    {
-        String[] data = new String(message).split("\t");
-        CustomTsv tsv = new CustomTsv();
-        for (int idx=0; idx<data.length; idx++) {
-            tsv.setValueByIndex(idx, data[idx]);
-        }
-        return tsv;
+  @Deprecated
+  public static Record convertFromCustomJson(byte[] message) {
+    try {
+      return mapper.readValue(message, CustomJson.class);
+    } catch (IOException e) {
+      logger.error(e.getMessage());
     }
+    return null;
+  }
 
-    public static Data convert(byte[] message,
-                               String separator,
-                               String enclosedChar)
-    {
-        return builder.setMessage(message)
-            .setSeparator(separator)
-            .setEnclosedChar(enclosedChar)
-            .build();
+  @Deprecated
+  public static Record convertFromCustomTsv(byte[] message) {
+    String[] data = new String(message).split("\t");
+    CustomTsv tsv = new CustomTsv();
+    for (int idx=0; idx<data.length; idx++) {
+      tsv.setValueByIndex(idx, data[idx]);
     }
+    return tsv;
+  }
 
-    @Override
-    public Record convert(byte[] message)
-    {
-        // TODO: impl
-        return null;
-    }
+  public static Data convert(byte[] message, String separator, String enclosedChar) {
+    return builder.setMessage(message).setSeparator(separator).setEnclosedChar(enclosedChar).build();
+  }
+
+  @Override
+  public Record convert(byte[] message) {
+    // TODO: implements
+    return null;
+  }
 }

@@ -4,9 +4,11 @@ import java.util.List;
 
 public interface Record<T>
 {
-    String get(T key);
+    T get(Object key);
 
-    List<T> getKeys();
+    List<String> keys();
+
+    List<T> values();
 
     int length();
 }

@@ -9,74 +9,70 @@ import java.util.List;
 
 @Deprecated
 @Message
-public class MessagePack implements Record<Integer>
-{
-    private String version;
-    private String datetime;
-    private String key;
-    private String value;
+public class MessagePack implements Record<String> {
 
-    public String getVersion()
-    {
-        return version;
-    }
+  private String version;
+  private String datetime;
+  private String key;
+  private String value;
 
-    public String getDatetime()
-    {
-        return datetime;
-    }
+  public String getVersion() {
+    return version;
+  }
 
-    public String getKey()
-    {
-        return key;
-    }
+  public String getDatetime() {
+    return datetime;
+  }
 
-    public String getValue()
-    {
-        return value;
-    }
+  public String getKey() {
+    return key;
+  }
 
-    public MessagePack setVersion(String version)
-    {
-        this.version = version; return this;
-    }
+  public String getValue() {
+    return value;
+  }
 
-    public MessagePack setDatetime(String datetime)
-    {
-        this.datetime = datetime; return this;
-    }
+  public MessagePack setVersion(String version) {
+    this.version = version; return this;
+  }
 
-    public MessagePack setKey(String key)
-    {
-        this.key = key; return this;
-    }
+  public MessagePack setDatetime(String datetime) {
+    this.datetime = datetime; return this;
+  }
 
-    public MessagePack setValue(String value)
-    {
-        this.value = value; return this;
-    }
+  public MessagePack setKey(String key) {
+    this.key = key; return this;
+  }
 
-    @Override
-    public String get(Integer idx)
-    {
-        switch (idx)
-        {
-            case 0: return getVersion();
-            case 1: return getDatetime();
-            case 2: return getKey();
-            case 3: return getValue();
-        }
-        return "";
-    }
+  public MessagePack setValue(String value) {
+    this.value = value; return this;
+  }
 
-    @Override
-    public List<Integer> getKeys()
-    {
-        return null;
+  @Override
+  public String get(Object idx) {
+    switch (idx.toString()) {
+      case "0": return getVersion();
+      case "1": return getDatetime();
+      case "2": return getKey();
+      case "3": return getValue();
     }
+    return "";
+  }
 
-    @Override
-    public int length() {
-        return 4;
-    }
+  @Override
+  public List<String> keys() {
+    // TODO: implements
+    return null;
+  }
+
+  @Override
+  public List<String> values() {
+    // TODO: implements
+    return null;
+  }
+
+  @Override
+  public int length() {
+    return 4;
+  }
 }

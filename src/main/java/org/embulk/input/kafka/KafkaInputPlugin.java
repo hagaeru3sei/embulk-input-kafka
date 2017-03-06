@@ -22,353 +22,277 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class KafkaInputPlugin implements InputPlugin
-{
+public class KafkaInputPlugin implements InputPlugin {
 
-    private Logger logger = Exec.getLogger(KafkaInputPlugin.class);
-    private volatile AtomicInteger counter = new AtomicInteger(0);
+  private Logger logger = Exec.getLogger(KafkaInputPlugin.class);
+  private volatile AtomicInteger counter = new AtomicInteger(0);
 
-    public interface PluginTask extends Task
-    {
-        @Config("zookeepers")
-        String getZookeepers();
+  public interface PluginTask extends Task {
+    @Config("zookeepers") String getZookeepers();
+    @Config("topic") String getTopic();
+    @Config("group.id") String getGroupId();
+    @Config("zookeeper.session.timeout.ms") String getZookeeperSessionTimeoutMs();
+    @Config("zookeeper.sync.time.ms") String getZookeeperSyncTimeMs();
+    @Config("auto.commit.interval.ms") String getAutoCommitIntervalMs();
+    @Config("auto.offset.reset") String getAutoOffsetReset();
+    @Config("ignore.lines") @ConfigDefault("0") String getIgnoreLines();
+    @Config("data.format") @ConfigDefault("null") String getDataFormat();
+    @Config("data.column.enclosedChar") @ConfigDefault("") String getEnclosedChar();
+    @Config("data.columns") SchemaConfig getColumns();
+    @Config("preview.sampling.count") @ConfigDefault("10") int getPreviewSamplingCount();
+    @Config("thread.count") @ConfigDefault("1") int getThreadCount();
+    @ConfigInject BufferAllocator getBufferAllocator();
+  }
 
-        @Config("topic")
-        String getTopic();
+  public interface GuessTask extends Task {
+    @Config("zookeepers") String getZookeepers();
+    @Config("topic") String getTopic();
+    @Config("zookeeper.session.timeout.ms") String getZookeeperSessionTimeoutMs();
+    @Config("zookeeper.sync.time.ms") String getZookeeperSyncTimeMs();
+    @Config("auto.offset.reset") String getAutoOffsetReset();
+    @Config("ignore.lines") @ConfigDefault("0") String getIgnoreLines();
+    @Config("data.format") String getDataFormat();
+    @Config("data.column.enclosedChar") @ConfigDefault("") String getEnclosedChar();
+  }
 
-        @Config("group.id")
-        String getGroupId();
+  @Override
+  public ConfigDiff transaction(ConfigSource config, InputPlugin.Control control) {
+    PluginTask task = config.loadConfig(PluginTask.class);
+    Schema schema = task.getColumns().toSchema();
+    int taskCount = 1;  // number of run() method calls
+    return resume(task.dump(), schema, taskCount, control);
+  }
 
-        @Config("zookeeper.session.timeout.ms")
-        String getZookeeperSessionTimeoutMs();
+  @Override
+  public ConfigDiff resume(TaskSource taskSource,
+      Schema schema,
+      int taskCount,
+      InputPlugin.Control control) {
+    control.run(taskSource, schema, taskCount);
+    return Exec.newConfigDiff();
+  }
 
-        @Config("zookeeper.sync.time.ms")
-        String getZookeeperSyncTimeMs();
+  @Override
+  public void cleanup(TaskSource taskSource, Schema schema, int i, List<TaskReport> list) {
+  }
 
-        @Config("auto.commit.interval.ms")
-        String getAutoCommitIntervalMs();
+  @Override
+  public TaskReport run(TaskSource taskSource, Schema schema, int taskIndex, PageOutput output) {
+    PluginTask task = taskSource.loadTask(PluginTask.class);
+    SchemaConfig columns = task.getColumns();
+    BufferAllocator allocator = task.getBufferAllocator();
+    PageBuilder pageBuilder = new PageBuilder(allocator, schema, output);
 
-        @Config("auto.offset.reset")
-        String getAutoOffsetReset();
+    ConsumerConfig config = getConsumerConfig(task);
+    ConsumerConnector consumer = Consumer.createJavaConsumerConnector(config);
+    List<KafkaStream<byte[], byte[]>> streams = getStreams(task, consumer);
 
-        @Config("ignore.lines")
-        @ConfigDefault("0")
-        String getIgnoreLines();
+    ExecutorService executor = Executors.newFixedThreadPool(task.getThreadCount());
 
-        @Config("data.format")
-        @ConfigDefault("null")
-        String getDataFormat();
-
-        @Config("data.column.enclosedChar")
-        @ConfigDefault("")
-        String getEnclosedChar();
-
-        @Config("data.columns")
-        SchemaConfig getColumns();
-
-        @Config("preview.sampling.count")
-        @ConfigDefault("10")
-        int getPreviewSamplingCount();
-
-        @Config("thread.count")
-        @ConfigDefault("1")
-        int getThreadCount();
-
-        @ConfigInject
-        BufferAllocator getBufferAllocator();
+    int threadNumber = 0;
+    DataType format = null;
+    try {
+      format = DataType.get(task.getDataFormat());
+    } catch (DataTypeNotFoundException e) {
+      logger.error(e.getMessage());
+    }
+    for (KafkaStream stream : streams) {
+      try {
+        executor.submit(
+          new ConsumerWorker(
+            stream,
+            threadNumber,
+            columns,
+            counter,
+            pageBuilder,
+            format,
+            Integer.valueOf(task.getIgnoreLines()),
+            task.getPreviewSamplingCount(),
+            task.getEnclosedChar()));
+      } catch (DataTypeNotFoundException e) {
+        logger.error(e.getMessage());
+      }
+      threadNumber++;
     }
 
-    public interface GuessTask extends Task
-    {
-        @Config("zookeepers")
-        String getZookeepers();
+    int savedCount;
+    while (!executor.isShutdown()) {
+      savedCount = counter.get();
+      try {
+        Thread.sleep(1000);
+      } catch (InterruptedException e) {
+        logger.error(e.getMessage());
+      }
 
-        @Config("topic")
-        String getTopic();
+      if (savedCount < counter.get()) continue;
 
-        @Config("zookeeper.session.timeout.ms")
-        String getZookeeperSessionTimeoutMs();
+      consumer.commitOffsets();
 
-        @Config("zookeeper.sync.time.ms")
-        String getZookeeperSyncTimeMs();
+      shutdown(consumer, executor);
+      pageBuilder.finish();
 
-        @Config("auto.offset.reset")
-        String getAutoOffsetReset();
+      logger.info("exec count: " + counter);
+    }
+    return Exec.newTaskReport();
+  }
 
-        @Config("ignore.lines")
-        @ConfigDefault("0")
-        String getIgnoreLines();
+  @Override
+  public ConfigDiff guess(ConfigSource config) {
+    // TODO: refactor guess
+    GuessTask task = config.loadConfig(GuessTask.class);
 
-        @Config("data.format")
-        String getDataFormat();
+    Properties props = new Properties();
+    props.put("zookeeper.connect", task.getZookeepers());
+    props.put("group.id", "guess-" + UUID.randomUUID().toString()); // --from-beginning
+    props.put("zookeeper.session.timeout.ms", task.getZookeeperSessionTimeoutMs());
+    props.put("zookeeper.sync.time.ms", task.getZookeeperSyncTimeMs());
+    props.put("auto.commit.enable", "false");
+    props.put("auto.offset.reset", task.getAutoOffsetReset());
 
-        @Config("data.column.enclosedChar")
-        @ConfigDefault("")
-        String getEnclosedChar();
+    ConsumerConnector consumer = Consumer.createJavaConsumerConnector(new ConsumerConfig(props));
+    HashMap<String, Integer> topicCountMap = new HashMap<String, Integer>();
+    topicCountMap.put(task.getTopic(), 1);
+    Map<String, List<KafkaStream<byte[], byte[]>>> consumerMap =
+      consumer.createMessageStreams(topicCountMap);
+    List<KafkaStream<byte[], byte[]>> streams = consumerMap.get(task.getTopic());
+
+    ExecutorService executor = Executors.newSingleThreadExecutor();
+
+    List<List<String>> sampled = new ArrayList<List<String>>();
+    List<String> columnNames = new ArrayList<String>();
+    DataType dataType = null;
+    try {
+      dataType = DataType.get(task.getDataFormat());
+    } catch (DataTypeNotFoundException e) {
+      logger.error(e.getMessage());
+    }
+    for (KafkaStream stream : streams) {
+      executor.submit(new DataSampler(stream, dataType, sampled, columnNames, task.getEnclosedChar()));
     }
 
-    @Override
-    public ConfigDiff transaction(ConfigSource config, InputPlugin.Control control)
-    {
-        PluginTask task = config.loadConfig(PluginTask.class);
-
-        Schema schema = task.getColumns().toSchema();
-        int taskCount = 1;  // number of run() method calls
-
-        return resume(task.dump(), schema, taskCount, control);
+    try {
+      Thread.sleep(10000);
+    } catch (InterruptedException e) {
+      logger.error(e.getMessage());
     }
 
-    @Override
-    public ConfigDiff resume(
-        TaskSource taskSource,
-        Schema schema,
-        int taskCount,
-        InputPlugin.Control control)
-    {
-        control.run(taskSource, schema, taskCount);
-
-        return Exec.newConfigDiff();
+    if (sampled.size() == 0) {
+      throw new NoSampleException("Can't get sample data because the first input line is empty");
     }
 
-    @Override
-    public void cleanup(
-        TaskSource taskSource,
-        Schema schema,
-        int i,
-        List<TaskReport> list)
-    {
+    // Guess a column name from header line.
+    List<Map<String, String>> columns = new ArrayList<Map<String, String>>();
+    List<String> header = sampled.get(0);
+    int idx = 0;
+    for (String th : header) {
+      Map<String, String> column = new LinkedHashMap<String, String>();
+      String name;
+      if (!columnNames.isEmpty()) {
+        name = columnNames.get(idx);
+      } else if (task.getIgnoreLines().equals("0")) {
+        name = "c" + String.valueOf(idx);
+      } else {
+        name = th;
+      }
+      column.put("name", name);
+      column.put("type", "");
+      columns.add(idx, column);
+      idx++;
     }
 
-    @Override
-    public TaskReport run(TaskSource taskSource,
-                          Schema schema, int taskIndex,
-                          PageOutput output)
-    {
-        PluginTask task = taskSource.loadTask(PluginTask.class);
+    // Guess a column type from values.
+    // TODO: increase sampling count
+    List<String> sample = sampled.get(1);
+    idx = 0;
+    for (String value : sample) {
+      if (!task.getEnclosedChar().isEmpty()) {
+        value = StringUtils.trim(value, task.getEnclosedChar());
+      }
+      if (value.equals("true") || value.equals("false")) {
+        columns.get(idx).put("type", "boolean");
+        idx++;
+        continue;
+      }
+      try {
+        Integer.parseInt(value);
+        columns.get(idx).put("type", "long");
+        idx++;
+        continue;
+      } catch (NumberFormatException e) {
+        logger.debug(e.getMessage());
+      }
+      try {
+        Double.parseDouble(value);
+        columns.get(idx).put("type", "double");
+        idx++;
+        continue;
+      } catch (NumberFormatException e) {
+        logger.debug(e.getMessage());
+      }
+      // TODO: guess format and Add date util class
+      try {
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        df.parse(value);
+        columns.get(idx).put("type", "timestamp");
+        columns.get(idx).put("format", "%Y-%m-%d %H:%M:%S");
+        idx++;
+        continue;
+      } catch (ParseException e) {
+        logger.debug(e.getMessage());
+      }
+      try {
+        SimpleDateFormat df = new SimpleDateFormat("[dd/MMM/yyyy:HH:mm:ss Z]", Locale.ENGLISH);
+        df.parse(value);
+        columns.get(idx).put("type", "timestamp");
+        columns.get(idx).put("format", "[%d/%b/%Y:%H:%M:%S %z]");
+        idx++;
+        continue;
+      } catch (ParseException e2) {
+        logger.debug(e2.getMessage());
+      }
 
-        SchemaConfig columns = task.getColumns();
-        BufferAllocator allocator = task.getBufferAllocator();
-        PageBuilder pageBuilder = new PageBuilder(allocator, schema, output);
-
-        ConsumerConfig config = getConsumerConfig(task);
-        ConsumerConnector consumer = Consumer.createJavaConsumerConnector(config);
-        List<KafkaStream<byte[], byte[]>> streams = getStreams(task, consumer);
-
-        ExecutorService executor = Executors.newFixedThreadPool(task.getThreadCount());
-
-        int threadNumber = 0;
-        DataType format = null;
-        try {
-            format = DataType.get(task.getDataFormat());
-        } catch (DataTypeNotFoundException e) {
-            logger.error(e.getMessage());
-        }
-        for (KafkaStream stream : streams) {
-            try {
-                executor.submit(
-                    new ConsumerWorker(
-                        stream,
-                        threadNumber,
-                        columns,
-                        counter,
-                        pageBuilder,
-                        format,
-                        Integer.valueOf(task.getIgnoreLines()),
-                        task.getPreviewSamplingCount(),
-                        task.getEnclosedChar()));
-            } catch (DataTypeNotFoundException e) {
-                logger.error(e.getMessage());
-            }
-            threadNumber++;
-        }
-
-        int savedCount;
-        while (!executor.isShutdown()) {
-            savedCount = counter.get();
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                logger.error(e.getMessage());
-            }
-
-            if (savedCount < counter.get()) continue;
-
-            consumer.commitOffsets();
-
-            shutdown(consumer, executor);
-            pageBuilder.finish();
-
-            logger.info("exec count: " + counter);
-        }
-
-        return Exec.newTaskReport();
+      columns.get(idx).put("type", "string");
+      idx++;
     }
 
-    @Override
-    public ConfigDiff guess(ConfigSource config)
-    {
-        // TODO: refactor guess
-        GuessTask task = config.loadConfig(GuessTask.class);
+    ConfigSource inputGuessed = config.deepCopy();
+    inputGuessed.set("data.columns", columns);
+    config.merge(inputGuessed);
 
-        Properties props = new Properties();
-        props.put("zookeeper.connect", task.getZookeepers());
-        props.put("group.id", "guess-" + UUID.randomUUID().toString()); // --from-beginning
-        props.put("zookeeper.session.timeout.ms", task.getZookeeperSessionTimeoutMs());
-        props.put("zookeeper.sync.time.ms", task.getZookeeperSyncTimeMs());
-        props.put("auto.commit.enable", "false");
-        props.put("auto.offset.reset", task.getAutoOffsetReset());
+    shutdown(consumer, executor);
 
-        ConsumerConnector consumer = Consumer.createJavaConsumerConnector(new ConsumerConfig(props));
-        HashMap<String, Integer> topicCountMap = new HashMap<String, Integer>();
-        topicCountMap.put(task.getTopic(), 1);
-        Map<String, List<KafkaStream<byte[], byte[]>>> consumerMap =
-            consumer.createMessageStreams(topicCountMap);
-        List<KafkaStream<byte[], byte[]>> streams = consumerMap.get(task.getTopic());
+    return Exec.newConfigDiff();
+  }
 
-        ExecutorService executor = Executors.newSingleThreadExecutor();
+  private ConsumerConfig getConsumerConfig(PluginTask task) {
+    Properties props = new Properties();
+    props.put("zookeeper.connect", task.getZookeepers());
+    props.put("group.id", Exec.isPreview() ? "preview-" + UUID.randomUUID().toString() : task.getGroupId());
+    props.put("zookeeper.session.timeout.ms", task.getZookeeperSessionTimeoutMs());
+    props.put("zookeeper.sync.time.ms", task.getZookeeperSyncTimeMs());
+    props.put("auto.commit.interval.ms", task.getAutoCommitIntervalMs());
+    props.put("auto.offset.reset", task.getAutoOffsetReset());
+    return new ConsumerConfig(props);
+  }
 
-        List<List<String>> sampled = new ArrayList<List<String>>();
-        List<String> columnNames = new ArrayList<String>();
-        DataType dataType = null;
-        try {
-            dataType = DataType.get(task.getDataFormat());
-        } catch (DataTypeNotFoundException e) {
-            logger.error(e.getMessage());
-        }
-        for (KafkaStream stream : streams) {
-            executor.submit(new DataSampler(stream, dataType, sampled, columnNames, task.getEnclosedChar()));
-        }
+  private List<KafkaStream<byte[], byte[]>> getStreams(PluginTask task, ConsumerConnector consumer) {
+    HashMap<String, Integer> topicCountMap = new HashMap<String, Integer>();
+    topicCountMap.put(task.getTopic(), task.getThreadCount());
+    Map<String, List<KafkaStream<byte[], byte[]>>> consumerMap =
+      consumer.createMessageStreams(topicCountMap);
+    return consumerMap.get(task.getTopic());
+  }
 
-        try {
-            Thread.sleep(10000);
-        } catch (InterruptedException e) {
-            logger.error(e.getMessage());
-        }
-
-        if (sampled.size() == 0) {
-            throw new NoSampleException("Can't get sample data because the first input line is empty");
-        }
-
-        // Guess a column name from header line.
-        List<Map<String, String>> columns = new ArrayList<Map<String, String>>();
-        List<String> header = sampled.get(0);
-        int idx = 0;
-        for (String th : header) {
-            Map<String, String> column = new LinkedHashMap<String, String>();
-            String name;
-            if (!columnNames.isEmpty()) {
-                name = columnNames.get(idx);
-            } else if (task.getIgnoreLines().equals("0")) {
-                name = "c" + String.valueOf(idx);
-            } else {
-                name = th;
-            }
-            column.put("name", name);
-            column.put("type", "");
-            columns.add(idx, column);
-            idx++;
-        }
-
-        // Guess a column type from values.
-        // TODO: increase sampling count
-        List<String> sample = sampled.get(1);
-        idx = 0;
-        for (String value : sample) {
-            if (!task.getEnclosedChar().isEmpty()) {
-                value = StringUtils.trim(value, task.getEnclosedChar());
-            }
-            if (value.equals("true") || value.equals("false")) {
-                columns.get(idx).put("type", "boolean");
-                idx++;
-                continue;
-            }
-            try {
-                Integer.parseInt(value);
-                columns.get(idx).put("type", "long");
-                idx++;
-                continue;
-            } catch (NumberFormatException e) {
-                logger.debug(e.getMessage());
-            }
-            try {
-                Double.parseDouble(value);
-                columns.get(idx).put("type", "double");
-                idx++;
-                continue;
-            } catch (NumberFormatException e) {
-                logger.debug(e.getMessage());
-            }
-            // TODO: guess format and Add date util class
-            try {
-                SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                df.parse(value);
-                columns.get(idx).put("type", "timestamp");
-                columns.get(idx).put("format", "%Y-%m-%d %H:%M:%S");
-                idx++;
-                continue;
-            } catch (ParseException e) {
-                logger.debug(e.getMessage());
-            }
-            try {
-                SimpleDateFormat df = new SimpleDateFormat("[dd/MMM/yyyy:HH:mm:ss Z]", Locale.ENGLISH);
-                df.parse(value);
-                columns.get(idx).put("type", "timestamp");
-                columns.get(idx).put("format", "[%d/%b/%Y:%H:%M:%S %z]");
-                idx++;
-                continue;
-            } catch (ParseException e2) {
-                logger.debug(e2.getMessage());
-            }
-
-            columns.get(idx).put("type", "string");
-            idx++;
-        }
-
-        ConfigSource inputGuessed = config.deepCopy();
-        inputGuessed.set("data.columns", columns);
-        config.merge(inputGuessed);
-
-        shutdown(consumer, executor);
-
-        return Exec.newConfigDiff();
+  private void shutdown(ConsumerConnector consumer, ExecutorService executor) {
+    consumer.shutdown();
+    executor.shutdown();
+    try {
+      if (!executor.awaitTermination(5000, TimeUnit.MILLISECONDS)) {
+        logger.info("Timed out waiting for consumer threads to shut down, exiting uncleanly");
+      }
+    } catch (InterruptedException e) {
+      logger.error("Interrupted during shutdown, exiting uncleanly");
     }
-
-    private ConsumerConfig getConsumerConfig(PluginTask task)
-    {
-        Properties props = new Properties();
-        props.put("zookeeper.connect", task.getZookeepers());
-        props.put("group.id", Exec.isPreview() ? "preview-" + UUID.randomUUID().toString() : task.getGroupId());
-        props.put("zookeeper.session.timeout.ms", task.getZookeeperSessionTimeoutMs());
-        props.put("zookeeper.sync.time.ms", task.getZookeeperSyncTimeMs());
-        props.put("auto.commit.interval.ms", task.getAutoCommitIntervalMs());
-        props.put("auto.offset.reset", task.getAutoOffsetReset());
-
-        return new ConsumerConfig(props);
-    }
-
-    private List<KafkaStream<byte[], byte[]>> getStreams(PluginTask task, ConsumerConnector consumer)
-    {
-        HashMap<String, Integer> topicCountMap = new HashMap<String, Integer>();
-        topicCountMap.put(task.getTopic(), task.getThreadCount());
-        Map<String, List<KafkaStream<byte[], byte[]>>> consumerMap =
-            consumer.createMessageStreams(topicCountMap);
-
-        return consumerMap.get(task.getTopic());
-    }
-
-    private void shutdown(ConsumerConnector consumer,
-                          ExecutorService executor)
-    {
-        consumer.shutdown();
-        executor.shutdown();
-
-        try {
-            if (!executor.awaitTermination(5000, TimeUnit.MILLISECONDS)) {
-                logger.info("Timed out waiting for consumer threads to shut down, exiting uncleanly");
-            }
-        } catch (InterruptedException e) {
-            logger.error("Interrupted during shutdown, exiting uncleanly");
-        }
-    }
+  }
 
 }
