@@ -4,11 +4,13 @@ import kafka.consumer.ConsumerIterator;
 import kafka.consumer.KafkaStream;
 import org.embulk.input.kafka.data.DataConverter;
 import org.embulk.input.kafka.data.DataType;
+import org.embulk.input.kafka.data.Parse;
 import org.embulk.input.kafka.data.Record;
 import org.embulk.input.kafka.exception.DataTypeNotFoundException;
 import org.embulk.spi.Exec;
 import org.slf4j.Logger;
 
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,7 +42,11 @@ public class DataSampler implements Runnable, Sampler {
 
   @Override
   public void run() {
-    sampling();
+    try {
+      sampling();
+    } catch (UnsupportedEncodingException e) {
+      logger.error("sampling error");
+    }
   }
 
   private Record getRecord(byte[] message) throws DataTypeNotFoundException {
@@ -67,7 +73,7 @@ public class DataSampler implements Runnable, Sampler {
   }
 
   @Override
-  public void sampling() {
+  public void sampling() throws UnsupportedEncodingException {
     ConsumerIterator<byte[], byte[]> it = stream.iterator();
 
     int counter = 0;
@@ -90,10 +96,10 @@ public class DataSampler implements Runnable, Sampler {
           case Json:
           case Ltsv:
             addKeys(record);
-            r.add((String) record.get(record.keys().get(idx)));
+            r.add(new Parse<>(record.get(record.keys().get(idx))).parseString());
             break;
           default:
-            r.add((String) record.get(idx));
+            r.add(new Parse<>(record.get(idx)).parseString());
         }
       }
       sampled.add(r);
@@ -102,8 +108,7 @@ public class DataSampler implements Runnable, Sampler {
     }
   }
 
-  private void addKeys(Record record)
-  {
+  private void addKeys(Record record) {
     if (!columnNames.isEmpty()) return;
     for (Object key : record.keys()) {
       columnNames.add((String)key);

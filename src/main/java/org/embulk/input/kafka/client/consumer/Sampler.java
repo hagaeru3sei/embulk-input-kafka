@@ -1,5 +1,7 @@
 package org.embulk.input.kafka.client.consumer;
 
+import java.io.UnsupportedEncodingException;
+
 public interface Sampler {
-  void sampling();
+  void sampling() throws UnsupportedEncodingException;
 }
