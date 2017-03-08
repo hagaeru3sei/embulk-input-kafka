@@ -29,6 +29,7 @@ public class KafkaInputPlugin implements InputPlugin {
 
   public interface PluginTask extends Task {
     @Config("zookeepers") String getZookeepers();
+    @Config("bootstrap.servers") @ConfigDefault("localhost:9092") String getBootstrapServers();
     @Config("topic") String getTopic();
     @Config("group.id") String getGroupId();
     @Config("zookeeper.session.timeout.ms") String getZookeeperSessionTimeoutMs();
@@ -46,6 +47,7 @@ public class KafkaInputPlugin implements InputPlugin {
 
   public interface GuessTask extends Task {
     @Config("zookeepers") String getZookeepers();
+    @Config("bootstrap.servers") @ConfigDefault("localhost:9092") String getBootstrapServers();
     @Config("topic") String getTopic();
     @Config("zookeeper.session.timeout.ms") String getZookeeperSessionTimeoutMs();
     @Config("zookeeper.sync.time.ms") String getZookeeperSyncTimeMs();
@@ -143,6 +145,7 @@ public class KafkaInputPlugin implements InputPlugin {
 
     Properties props = new Properties();
     props.put("zookeeper.connect", task.getZookeepers());
+    props.put("bootstrap.servers", task.getBootstrapServers());
     props.put("group.id", "guess-" + UUID.randomUUID().toString()); // --from-beginning
     props.put("zookeeper.session.timeout.ms", task.getZookeeperSessionTimeoutMs());
     props.put("zookeeper.sync.time.ms", task.getZookeeperSyncTimeMs());
@@ -267,6 +270,7 @@ public class KafkaInputPlugin implements InputPlugin {
   private ConsumerConfig getConsumerConfig(PluginTask task) {
     Properties props = new Properties();
     props.put("zookeeper.connect", task.getZookeepers());
+    props.put("bootstrap.servers", task.getBootstrapServers());
     props.put("group.id", Exec.isPreview() ? "preview-" + UUID.randomUUID().toString() : task.getGroupId());
     props.put("zookeeper.session.timeout.ms", task.getZookeeperSessionTimeoutMs());
     props.put("zookeeper.sync.time.ms", task.getZookeeperSyncTimeMs());

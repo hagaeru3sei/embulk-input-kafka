@@ -110,9 +110,7 @@ public class DataSampler implements Runnable, Sampler {
 
   private void addKeys(Record record) {
     if (!columnNames.isEmpty()) return;
-    for (Object key : record.keys()) {
-      columnNames.add((String)key);
-    }
+    for (Object key : record.keys()) columnNames.add((String)key);
   }
 
 }

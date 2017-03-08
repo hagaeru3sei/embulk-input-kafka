@@ -101,7 +101,6 @@ public class ConsumerWorker implements Runnable {
             } catch (ColumnTypeNotFoundException | DateFormatException | ParseException e) {
               logger.error(e.getMessage());
             }
-
             idx++;
           }
         }
