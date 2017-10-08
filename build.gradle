@@ -15,8 +15,8 @@ configurations {
 version = "0.1.11"
 
 dependencies {
-    compile  "org.embulk:embulk-core:0.8.21"
-    provided "org.embulk:embulk-core:0.8.21"
+    compile  "org.embulk:embulk-core:0.8.35"
+    provided "org.embulk:embulk-core:0.8.35"
     // compile "YOUR_JAR_DEPENDENCY_GROUP:YOUR_JAR_DEPENDENCY_MODULE:YOUR_JAR_DEPENDENCY_VERSION"
     compile  "org.apache.kafka:kafka_2.11:0.10.2.0"
     compile  "com.fasterxml.jackson.core:com.springsource.com.fasterxml.jackson.core.jackson-core:2.0.2"
